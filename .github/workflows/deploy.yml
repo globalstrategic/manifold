@@ -43,8 +43,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: access_token
-          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: manifold-provisioner@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+          workload_identity_provider: projects/${{ steps.secrets.outputs.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: manifold-provisioner@${{ steps.secrets.outputs.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -97,7 +97,7 @@ jobs:
       - name: Configure gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ steps.secrets.outputs.GCP_PROJECT_ID }}
           install_components: 'beta'
 
       - name: Verify target instance exists

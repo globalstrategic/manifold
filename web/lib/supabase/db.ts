@@ -9,7 +9,8 @@ export function getSupabaseInstanceId() {
 
 export function initSupabaseClient() {
   const instanceId = getSupabaseInstanceId()
-  return createClient(instanceId, ENV_CONFIG.supabaseAnonKey)
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ENV_CONFIG.supabaseAnonKey
+  return createClient(instanceId, anonKey)
 }
 
 export function updateSupabaseAuth(token?: string) {

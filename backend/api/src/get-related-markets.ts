@@ -29,16 +29,22 @@ export const getRelatedMarkets: APIHandler<'get-related-markets'> = async (
   if (cachedResults && cachedResults.lastUpdated > Date.now() - HOUR_MS) {
     return refreshedRelatedMarkets(contractId, cachedResults, pg)
   }
-  const unfilteredMarketsFromEmbeddings = await pg.map(
-    `
+  let unfilteredMarketsFromEmbeddings: Contract[]
+  try {
+    unfilteredMarketsFromEmbeddings = await pg.map(
+      `
       select * from close_contract_embeddings(
         input_contract_id := $1,
         match_count := $2,
         similarity_threshold := $3
         )`,
-    [contractId, limit * 2, TOPIC_SIMILARITY_THRESHOLD],
-    (row) => row.data as Contract
-  )
+      [contractId, limit * 2, TOPIC_SIMILARITY_THRESHOLD],
+      (row) => row.data as Contract
+    )
+  } catch (e) {
+    log('Embeddings not available, returning empty related markets')
+    return { marketsFromEmbeddings: [] }
+  }
 
   const orderByNonStonks = (c: Contract) =>
     c.outcomeType !== 'STONK' && !c.question.includes('stock') ? 1 : 0

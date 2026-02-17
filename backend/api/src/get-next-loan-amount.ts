@@ -23,9 +23,26 @@ import {
 import { keyBy, sumBy } from 'lodash'
 import { convertPortfolioHistory } from 'common/supabase/portfolio-metrics'
 
+const EMPTY_LOAN_RESPONSE = {
+  maxGeneralLoan: 0,
+  currentLoan: 0,
+  available: 0,
+  dailyLimit: 0,
+  todayLoans: 0,
+  availableToday: 0,
+}
+
 export const getNextLoanAmount: APIHandler<'get-next-loan-amount'> = async ({
   userId,
 }) => {
+  try {
+  return await getNextLoanAmountInner(userId)
+  } catch (e) {
+    return EMPTY_LOAN_RESPONSE
+  }
+}
+
+const getNextLoanAmountInner = async (userId: string) => {
   const pg = createSupabaseDirectClient()
 
   const portfolioMetric = await pg.oneOrNone(

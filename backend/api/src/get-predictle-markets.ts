@@ -238,6 +238,14 @@ function prepareMarkets(
 }
 
 export const getPredictle: APIHandler<'get-predictle-markets'> = async () => {
+  try {
+    return await getPredictleInner()
+  } catch (e) {
+    return { markets: [], correctOrder: {}, puzzleNumber: 0, dateString: getTodayDateString() }
+  }
+}
+
+const getPredictleInner = async () => {
   const pg = createSupabaseDirectClient()
   const todayDate = getTodayDateString()
 

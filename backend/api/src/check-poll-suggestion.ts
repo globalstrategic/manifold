@@ -65,10 +65,7 @@ Only suggest a poll (isSubjective: true) when you're reasonably confident the qu
         return result
       } catch (e) {
         log.error('Failed to check poll suggestion:', { e })
-        throw new APIError(
-          500,
-          'Failed to analyze question. Please try again.'
-        )
+        return { isSubjective: false, confidence: 0, reason: 'AI unavailable' }
       }
     },
     { maxCalls: 120, windowMs: HOUR_MS }

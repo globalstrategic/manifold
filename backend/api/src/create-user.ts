@@ -9,5 +9,7 @@ export const createuser: APIHandler<'createuser'> = async (
 ) => {
   const host = req.get('referer')
   const ip = getIp(req)
-  return createUserMain(props, auth.uid, ip, host)
+  const decodedToken =
+    auth.creds.kind === 'jwt' ? auth.creds.data : undefined
+  return createUserMain(props, auth.uid, ip, host, decodedToken)
 }

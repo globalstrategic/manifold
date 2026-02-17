@@ -1,0 +1,15 @@
+name: manifold
+
+services:
+  db:
+    ports:
+      - "54322:${POSTGRES_PORT:-5432}"
+
+  kong:
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+
+  studio:
+    ports:
+      - "3002:3000"

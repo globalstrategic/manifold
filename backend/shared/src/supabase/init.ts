@@ -126,8 +126,8 @@ export function createSupabaseDirectClient(opts?: {
   }
   log('Connecting to postgres')
   const client = pgp({
-    host: `db.${getInstanceHostname(instanceId)}`,
-    port: 5432,
+    host: process.env.SUPABASE_DB_HOST ?? `db.${getInstanceHostname(instanceId)}`,
+    port: parseInt(process.env.SUPABASE_DB_PORT ?? '5432'),
     user: `postgres`,
     password: password,
 

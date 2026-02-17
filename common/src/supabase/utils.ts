@@ -34,7 +34,7 @@ export function createClient(
   key: string,
   opts?: SupabaseClientOptionsGeneric<'public'>
 ) {
-  const url = `https://${instanceId}.supabase.co`
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? `https://${instanceId}.supabase.co`
   return createClientGeneric(url, key, opts) as SupabaseClient
 }
 

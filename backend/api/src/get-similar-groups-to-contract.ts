@@ -27,12 +27,13 @@ const GROUPS_SLUGS_TO_IGNORE = [
 ]
 export const getsimilargroupstocontract = authEndpoint(async (req) => {
   const { question } = bodySchema.parse(req.body)
-  const embedding = await generateEmbeddings(question)
-  if (!embedding) return { error: 'Failed to generate embeddings' }
-  const pg = createSupabaseDirectClient()
-  log('Finding similar groups to' + question)
-  const groups = await pg.map(
-    `
+  try {
+    const embedding = await generateEmbeddings(question)
+    if (!embedding) return { groups: [] }
+    const pg = createSupabaseDirectClient()
+    log('Finding similar groups to' + question)
+    const groups = await pg.map(
+      `
       select groups.*, (embedding <=> ($1)::vector) as distance from groups
           join group_embeddings on groups.id = group_embeddings.group_id
             where (embedding <=> ($1)::vector) < $2
@@ -42,17 +43,21 @@ export const getsimilargroupstocontract = authEndpoint(async (req) => {
             and slug not in ($3:list)
             order by POW(1-(embedding <=> ($1)::vector), 2) * importance_score desc
             limit 5
-    `,
-    [embedding, TOPIC_SIMILARITY_THRESHOLD, GROUPS_SLUGS_TO_IGNORE],
-    (group) => {
-      log('group: ' + group.name + ' distance: ' + group.distance)
-      return convertGroup(group)
+      `,
+      [embedding, TOPIC_SIMILARITY_THRESHOLD, GROUPS_SLUGS_TO_IGNORE],
+      (group) => {
+        log('group: ' + group.name + ' distance: ' + group.distance)
+        return convertGroup(group)
+      }
+    )
+    return {
+      groups: uniqBy(
+        orderBy(groups, (g) => g.importanceScore, 'desc'),
+        (g) => g.name
+      ),
     }
-  )
-  return {
-    groups: uniqBy(
-      orderBy(groups, (g) => g.importanceScore, 'desc'),
-      (g) => g.name
-    ),
+  } catch (e) {
+    log.error('Failed to get similar groups:', { e })
+    return { groups: [] }
   }
 })

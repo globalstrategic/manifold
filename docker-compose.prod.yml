@@ -1,0 +1,103 @@
+name: manifold
+
+services:
+  # ─── Supabase (production settings) ──────────────────────────────────────────
+
+  db:
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:${POSTGRES_PORT:-5432}"
+
+  kong:
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  auth:
+    restart: unless-stopped
+
+  rest:
+    restart: unless-stopped
+
+  studio:
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3000"
+
+  meta:
+    restart: unless-stopped
+
+  # ─── Manifold Services (containerized for production) ────────────────────────
+
+  manifold-api:
+    build:
+      context: .
+      dockerfile: manifold-api.Dockerfile
+    container_name: manifold-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      kong:
+        condition: service_started
+    ports:
+      - "8088:80"
+    environment:
+      SELF_HOSTED: "true"
+      PORT: "80"
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
+      SUPABASE_DB_HOST: db
+      SUPABASE_DB_PORT: ${POSTGRES_PORT:-5432}
+      SUPABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      SUPABASE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_INSTANCE_ID: self-hosted
+      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
+      API_SECRET: ${API_SECRET:-self-hosted-api-secret}
+    volumes:
+      - ${GOOGLE_ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/gcp/adc.json:ro
+
+  manifold-web:
+    build:
+      context: .
+      dockerfile: manifold-web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-localhost:8088}
+        NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    container_name: manifold-web
+    restart: unless-stopped
+    depends_on:
+      manifold-api:
+        condition: service_started
+    ports:
+      - "3000:3000"
+
+  manifold-scheduler:
+    build:
+      context: .
+      dockerfile: manifold-api.Dockerfile
+    container_name: manifold-scheduler
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SELF_HOSTED: "true"
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
+      SUPABASE_DB_HOST: db
+      SUPABASE_DB_PORT: ${POSTGRES_PORT:-5432}
+      SUPABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      SUPABASE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_INSTANCE_ID: self-hosted
+      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
+      API_SECRET: ${API_SECRET:-self-hosted-api-secret}
+    volumes:
+      - ${GOOGLE_ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/gcp/adc.json:ro
+    command: ["node", "backend/scheduler/lib/index.js"]

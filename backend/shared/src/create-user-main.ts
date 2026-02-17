@@ -35,10 +35,24 @@ export const createUserMain = async (
   props: ValidatedAPIParams<'createuser'>,
   userId: string,
   ip: string,
-  host: string | undefined
+  host: string | undefined,
+  decodedToken?: admin.auth.DecodedIdToken
 ) => {
   const { deviceToken: preDeviceToken, adminToken, visitedContractIds } = props
-  const firebaseUser = await admin.auth().getUser(userId)
+
+  // For self-hosted, use decoded JWT token instead of admin.auth().getUser()
+  // which requires Identity Toolkit API access that ADC user credentials lack.
+  const selfHosted = process.env.SELF_HOSTED === 'true'
+  const firebaseUser = selfHosted && decodedToken
+    ? {
+        providerData: [{
+          providerId: decodedToken.firebase?.sign_in_provider || 'google.com',
+        }],
+        email: decodedToken.email,
+        displayName: decodedToken.name as string | undefined,
+        photoURL: decodedToken.picture as string | undefined,
+      }
+    : await admin.auth().getUser(userId)
 
   const testUserAKAEmailPasswordUser =
     firebaseUser.providerData[0].providerId === 'password'
@@ -58,7 +72,7 @@ export const createUserMain = async (
     ? randomString() + randomString()
     : preDeviceToken
 
-  const fbUser = await admin.auth().getUser(userId)
+  const fbUser = firebaseUser
   const email = fbUser.email
   const emailName = email?.replace(/@.*$/, '')
 

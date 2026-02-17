@@ -85,6 +85,9 @@ export const getSecrets = async (credentials?: any, ...ids: SecretId[]) => {
 // Fetches all secrets and loads them into process.env.
 // Useful for running random backend code.
 export const loadSecretsToEnv = async (credentials?: any) => {
+  // When self-hosted, secrets are provided via environment variables directly.
+  if (process.env.SELF_HOSTED === 'true') return
+
   const allSecrets = await getSecrets(credentials)
   for (const [key, value] of Object.entries(allSecrets)) {
     if (key && value) {

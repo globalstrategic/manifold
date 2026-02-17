@@ -10,6 +10,9 @@ let key =
     : process.env.DEV_ADMIN_SUPABASE_KEY
 
 export async function initSupabaseAdmin() {
+  if (key == null && process.env.SELF_HOSTED === 'true') {
+    key = process.env.SUPABASE_KEY
+  }
   if (key == null) {
     console.warn(
       'Loading Supabase key from GCP. (Should happen only locally, never in production!)'

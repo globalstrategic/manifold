@@ -33,16 +33,7 @@ dev: ## Start Supabase (Docker) + Manifold API & web (local yarn)
 	@echo "  Kong:   http://localhost:8000"
 	@echo "  DB:     localhost:54322"
 	@echo ""
-	$(DOP) bash -c 'GOOGLE_CLOUD_PROJECT=manifold-fd657 \
-		SELF_HOSTED=true \
-		SUPABASE_DB_HOST=127.0.0.1 \
-		SUPABASE_DB_PORT=54322 \
-		SUPABASE_URL=http://localhost:8000 \
-		SUPABASE_INSTANCE_ID=self-hosted \
-		NEXT_PUBLIC_API_URL=localhost:8088 \
-		NEXT_PUBLIC_FIREBASE_ENV=DEV \
-		NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000 \
-		NEXT_PUBLIC_SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY \
+	$(DOP) bash -c 'SUPABASE_DB_PORT=54322 \
 		npx concurrently \
 			-n API,NEXT,TS \
 			-c white,magenta,cyan \
@@ -63,26 +54,14 @@ dev-db: ## Start only Supabase (Docker)
 dev-api: ## Start only Manifold API (requires Supabase running)
 	@-lsof -ti :8088 | xargs kill 2>/dev/null; true
 	$(DOP) env \
-		GOOGLE_CLOUD_PROJECT=manifold-fd657 \
-		SELF_HOSTED=true \
 		PORT=8088 \
-		SUPABASE_DB_HOST=127.0.0.1 \
 		SUPABASE_DB_PORT=54322 \
-		SUPABASE_URL=http://localhost:8000 \
-		SUPABASE_INSTANCE_ID=self-hosted \
-		NEXT_PUBLIC_FIREBASE_ENV=DEV \
 		yarn --cwd=backend/api dev
 
 .PHONY: dev-web
 dev-web: ## Start only Manifold web (requires API running)
 	@-lsof -ti :3000 | xargs kill 2>/dev/null; rm -f web/.next/dev/lock; true
-	$(DOP) bash -c 'GOOGLE_CLOUD_PROJECT=manifold-fd657 \
-		SELF_HOSTED=true \
-		NEXT_PUBLIC_API_URL=localhost:8088 \
-		NEXT_PUBLIC_FIREBASE_ENV=DEV \
-		NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000 \
-		NEXT_PUBLIC_SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY \
-		yarn --cwd=web serve'
+	$(DOP) yarn --cwd=web serve
 
 .PHONY: down
 down: ## Stop Supabase containers

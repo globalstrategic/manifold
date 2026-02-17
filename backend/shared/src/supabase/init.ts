@@ -91,9 +91,9 @@ export function createSupabaseClient() {
       "Can't connect to Supabase; no process.env.SUPABASE_INSTANCE_ID and no instance ID in config."
     )
   }
-  const key = process.env.SUPABASE_KEY
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!key) {
-    throw new Error("Can't connect to Supabase; no process.env.SUPABASE_KEY.")
+    throw new Error("Can't connect to Supabase; no process.env.SUPABASE_SERVICE_ROLE_KEY.")
   }
 
   // mqp - note that if you want to pass autoRefreshToken: true, you MUST call

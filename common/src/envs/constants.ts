@@ -1,6 +1,7 @@
 import { escapeRegExp } from 'lodash'
 import { DEV_CONFIG } from './dev'
 import { EnvConfig, PROD_CONFIG } from './prod'
+import { getSelfHostedConfig } from './self-hosted'
 
 export const ENV = (process.env.NEXT_PUBLIC_FIREBASE_ENV ?? 'PROD') as
   | 'PROD'
@@ -33,7 +34,8 @@ export const TRADED_TERM = 'bet'
 export const TRADING_TERM = 'betting'
 export const TRADER_TERM = 'trader'
 
-export const ENV_CONFIG = CONFIGS[ENV]
+export const ENV_CONFIG =
+  process.env.SELF_HOSTED === 'true' ? getSelfHostedConfig() : CONFIGS[ENV]
 
 export function isAdminId(id: string) {
   return ENV_CONFIG.adminIds.includes(id)

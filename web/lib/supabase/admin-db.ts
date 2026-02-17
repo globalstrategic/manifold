@@ -11,7 +11,7 @@ let key =
 
 export async function initSupabaseAdmin() {
   if (key == null && process.env.SELF_HOSTED === 'true') {
-    key = process.env.SUPABASE_KEY
+    key = process.env.SUPABASE_SERVICE_ROLE_KEY
   }
   if (key == null) {
     console.warn(

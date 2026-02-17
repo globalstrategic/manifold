@@ -1,0 +1,222 @@
+name: Provision GCP VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "GCP region"
+        required: true
+        default: "us-central1"
+      zone:
+        description: "GCP zone"
+        required: true
+        default: "us-central1-a"
+      machine_type:
+        description: "GCE machine type"
+        required: true
+        default: "e2-standard-2"
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    env:
+      GOOGLE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+      INSTANCE_NAME: manifold-01
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch secrets
+        id: secrets
+        uses: ./.github/actions/fetch-secrets
+        with:
+          doppler_token: ${{ secrets.DOPPLER_TOKEN_PROD }}
+
+      - name: Authenticate to GCP via WIF
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: "access_token"
+          workload_identity_provider: "projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+          service_account: "manifold-provisioner@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+
+      - name: Configure gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'beta'
+
+      - name: Check if instance already exists
+        run: |
+          if gcloud compute instances describe ${{ env.INSTANCE_NAME }} \
+            --zone ${{ inputs.zone }} \
+            --project ${{ secrets.GCP_PROJECT_ID }} &>/dev/null; then
+            echo "::error::Instance '${{ env.INSTANCE_NAME }}' already exists in zone ${{ inputs.zone }}."
+            echo ""
+            echo "To proceed, either:"
+            echo "  1. Delete the instance from GCP Console"
+            echo "  2. Run the deploy workflow instead to update the existing instance"
+            echo ""
+            exit 1
+          fi
+          echo "Instance does not exist, proceeding with provisioning."
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform init
+        working-directory: infra
+        run: |
+          terraform init \
+            -backend-config="bucket=manifold-terraform-state" \
+            -backend-config="prefix=${{ env.INSTANCE_NAME }}"
+
+      - name: Terraform apply
+        id: terraform
+        working-directory: infra
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="instance_name=${{ env.INSTANCE_NAME }}" \
+            ${{ inputs.region && format('-var=region={0}', inputs.region) || '' }} \
+            ${{ inputs.zone && format('-var=zone={0}', inputs.zone) || '' }} \
+            ${{ inputs.machine_type && format('-var=machine_type={0}', inputs.machine_type) || '' }}
+
+          echo "static_ip=$(terraform output -raw static_ip)" >> $GITHUB_OUTPUT
+
+      - name: Setup domains
+        id: domains
+        uses: ./.github/actions/setup-domains
+
+      - name: Create Cloudflare DNS records
+        uses: ./.github/actions/ensure-dns
+        with:
+          dns_names: ${{ steps.domains.outputs.dns_names }}
+          static_ip: ${{ steps.terraform.outputs.static_ip }}
+          cloudflare_zone_id: ${{ steps.secrets.outputs.CLOUDFLARE_ZONE_ID }}
+          cloudflare_api_token: ${{ steps.secrets.outputs.CLOUDFLARE_API_TOKEN }}
+
+      - name: Wait for VM to be ready
+        run: |
+          echo "Waiting for VM startup script to complete..."
+          sleep 60
+
+          # Wait for SSH to be available (up to 5 minutes)
+          for i in {1..30}; do
+            if gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
+              --zone ${{ inputs.zone }} \
+              --tunnel-through-iap \
+              --command "echo 'SSH ready'" 2>/dev/null; then
+              echo "VM is ready"
+              break
+            fi
+            echo "Waiting for SSH... ($i/30)"
+            sleep 10
+          done
+
+      - name: Setup application on VM
+        run: |
+          # Prepare secrets as base64 env file for safe SSH transfer
+          SECRETS_ENV=$(jq -r 'to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
+
+          gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone ${{ inputs.zone }} \
+            --tunnel-through-iap \
+            --command "
+              set -e
+
+              # Login to GitHub Container Registry
+              echo '${{ secrets.GITHUB_TOKEN }}' | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+              cd /opt/manifold
+
+              echo 'Application setup complete.'
+            "
+
+      - name: Upload repo files to VM
+        run: |
+          # Create a tarball of needed files
+          tar czf /tmp/manifold-deploy.tar.gz \
+            docker-compose.yml \
+            docker-compose.prod.yml \
+            nginx.conf.template \
+            volumes/
+
+          gcloud beta compute scp /tmp/manifold-deploy.tar.gz \
+            ${{ env.INSTANCE_NAME }}:/opt/manifold/deploy.tar.gz \
+            --zone ${{ inputs.zone }} \
+            --tunnel-through-iap
+
+          gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone ${{ inputs.zone }} \
+            --tunnel-through-iap \
+            --command "
+              cd /opt/manifold
+              sudo tar xzf deploy.tar.gz
+              rm deploy.tar.gz
+            "
+
+      - name: Start all services
+        run: |
+          # Prepare secrets as base64 env file for safe SSH transfer
+          SECRETS_ENV=$(jq -r 'to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
+
+          gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone ${{ inputs.zone }} \
+            --tunnel-through-iap \
+            --command "
+              set -euo pipefail
+              cd /opt/manifold
+
+              # Login to GitHub Container Registry
+              echo '${{ secrets.GITHUB_TOKEN }}' | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+              # Write env file from Doppler secrets
+              echo '$SECRETS_ENV' | base64 -d | sudo tee .env > /dev/null
+
+              # Generate nginx.conf from template with domain substitution
+              export MAIN_DOMAIN='${{ steps.domains.outputs.main_domain }}'
+              export API_DOMAIN='${{ steps.domains.outputs.api_domain }}'
+              export DB_DOMAIN='${{ steps.domains.outputs.db_domain }}'
+              export STUDIO_DOMAIN='${{ steps.domains.outputs.studio_domain }}'
+              envsubst '\${MAIN_DOMAIN} \${API_DOMAIN} \${DB_DOMAIN} \${STUDIO_DOMAIN}' < nginx.conf.template | sudo tee nginx.conf > /dev/null
+
+              # Write Cloudflare Origin CA certificate for nginx SSL
+              sudo mkdir -p /opt/manifold/ssl
+              echo '${{ steps.secrets.outputs.CLOUDFLARE_ORIGIN_CERT }}' | sudo tee /opt/manifold/ssl/cert.pem > /dev/null
+              echo '${{ steps.secrets.outputs.CLOUDFLARE_ORIGIN_KEY }}' | sudo tee /opt/manifold/ssl/key.pem > /dev/null
+              sudo chmod 600 /opt/manifold/ssl/key.pem
+
+              # Pull GHCR images for manifold services
+              sudo docker pull ghcr.io/${{ github.repository_owner }}/manifold-api:latest || true
+              sudo docker pull ghcr.io/${{ github.repository_owner }}/manifold-web:latest || true
+
+              # Start all services
+              sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+              echo 'All services started.'
+              sudo docker ps
+            "
+
+      - name: Print summary
+        run: |
+          echo "## Provision Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Instance:** ${{ env.INSTANCE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Static IP:** ${{ steps.terraform.outputs.static_ip }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Zone:** ${{ inputs.zone }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web:** https://${{ steps.domains.outputs.main_domain }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **API:** https://${{ steps.domains.outputs.api_domain }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Supabase:** https://${{ steps.domains.outputs.db_domain }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Studio:** https://${{ steps.domains.outputs.studio_domain }}" >> $GITHUB_STEP_SUMMARY

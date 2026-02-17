@@ -1,0 +1,32 @@
+name: 'Setup Domains'
+description: 'Configure subdomains for Manifold deployment'
+
+outputs:
+  main_domain:
+    description: 'Main domain (manifold.mikhailtal.dev)'
+    value: ${{ steps.domains.outputs.main_domain }}
+  api_domain:
+    description: 'API subdomain'
+    value: ${{ steps.domains.outputs.api_domain }}
+  db_domain:
+    description: 'Supabase gateway subdomain'
+    value: ${{ steps.domains.outputs.db_domain }}
+  studio_domain:
+    description: 'Supabase Studio subdomain'
+    value: ${{ steps.domains.outputs.studio_domain }}
+  dns_names:
+    description: 'Space-separated DNS record names for Cloudflare'
+    value: ${{ steps.domains.outputs.dns_names }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate domain configuration
+      id: domains
+      shell: bash
+      run: |
+        echo "main_domain=manifold.mikhailtal.dev" >> $GITHUB_OUTPUT
+        echo "api_domain=manifold-api.mikhailtal.dev" >> $GITHUB_OUTPUT
+        echo "db_domain=manifold-db.mikhailtal.dev" >> $GITHUB_OUTPUT
+        echo "studio_domain=manifold-studio.mikhailtal.dev" >> $GITHUB_OUTPUT
+        echo "dns_names=manifold manifold-api manifold-db manifold-studio" >> $GITHUB_OUTPUT

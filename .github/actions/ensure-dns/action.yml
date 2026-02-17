@@ -1,0 +1,84 @@
+name: 'Ensure DNS Records'
+description: 'Create or update Cloudflare DNS A records for the given domains'
+
+inputs:
+  dns_names:
+    description: 'Space-separated DNS record names (e.g., "manifold manifold-api manifold-db manifold-studio")'
+    required: true
+  static_ip:
+    description: 'IP address for DNS records'
+    required: true
+  cloudflare_zone_id:
+    description: 'Cloudflare Zone ID'
+    required: true
+  cloudflare_api_token:
+    description: 'Cloudflare API Token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ensure DNS records exist
+      shell: bash
+      run: |
+        STATIC_IP="${{ inputs.static_ip }}"
+        DNS_NAMES="${{ inputs.dns_names }}"
+
+        for NAME in $DNS_NAMES; do
+          if [ "$NAME" = "@" ]; then
+            DISPLAY="mikhailtal.dev"
+          else
+            DISPLAY="${NAME}.mikhailtal.dev"
+          fi
+
+          echo "Ensuring DNS record for ${DISPLAY}..."
+
+          # Check if record exists
+          EXISTING=$(curl -sS -X GET \
+            "https://api.cloudflare.com/client/v4/zones/${{ inputs.cloudflare_zone_id }}/dns_records?name=${DISPLAY}&type=A" \
+            -H "Authorization: Bearer ${{ inputs.cloudflare_api_token }}" \
+            | jq -r '.result[0].id // empty')
+
+          if [ -n "$EXISTING" ]; then
+            # Update existing record
+            curl -sS -X PUT "https://api.cloudflare.com/client/v4/zones/${{ inputs.cloudflare_zone_id }}/dns_records/${EXISTING}" \
+              -H "Authorization: Bearer ${{ inputs.cloudflare_api_token }}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"A\",\"name\":\"${NAME}\",\"content\":\"${STATIC_IP}\",\"ttl\":120,\"proxied\":true}" > /dev/null
+            echo "Updated DNS record for ${DISPLAY}"
+          else
+            # Create new record
+            RESPONSE=$(curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${{ inputs.cloudflare_zone_id }}/dns_records" \
+              -H "Authorization: Bearer ${{ inputs.cloudflare_api_token }}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"A\",\"name\":\"${NAME}\",\"content\":\"${STATIC_IP}\",\"ttl\":120,\"proxied\":true}")
+            SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+            ERROR_CODE=$(echo "$RESPONSE" | jq -r '.errors[0].code // empty')
+
+            if [ "$SUCCESS" = "true" ]; then
+              echo "Created DNS record for ${DISPLAY}"
+            elif [ "$ERROR_CODE" = "81058" ]; then
+              # Record already exists (race condition) - update it
+              echo "DNS record for ${DISPLAY} already exists, updating..."
+              RECORD_ID=$(curl -sS -X GET \
+                "https://api.cloudflare.com/client/v4/zones/${{ inputs.cloudflare_zone_id }}/dns_records?name=${DISPLAY}&type=A" \
+                -H "Authorization: Bearer ${{ inputs.cloudflare_api_token }}" \
+                | jq -r '.result[0].id // empty')
+              if [ -n "$RECORD_ID" ]; then
+                curl -sS -X PUT "https://api.cloudflare.com/client/v4/zones/${{ inputs.cloudflare_zone_id }}/dns_records/${RECORD_ID}" \
+                  -H "Authorization: Bearer ${{ inputs.cloudflare_api_token }}" \
+                  -H "Content-Type: application/json" \
+                  --data "{\"type\":\"A\",\"name\":\"${NAME}\",\"content\":\"${STATIC_IP}\",\"ttl\":120,\"proxied\":true}" > /dev/null
+                echo "Updated DNS record for ${DISPLAY}"
+              fi
+            elif [ "$ERROR_CODE" = "81054" ]; then
+              # CNAME record exists - skip
+              echo "CNAME record exists for ${DISPLAY}, skipping"
+            else
+              echo "Warning: Could not create DNS record for ${DISPLAY}"
+              echo "Response: $RESPONSE"
+            fi
+          fi
+        done
+
+        echo "DNS records ready."

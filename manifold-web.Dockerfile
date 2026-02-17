@@ -9,7 +9,7 @@ ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 # Prevent build-time prerender from trying to load GCP secrets
 ENV SELF_HOSTED=true
 ENV GOOGLE_CLOUD_PROJECT=build-placeholder
-ENV SUPABASE_KEY=build-placeholder
+ENV SUPABASE_SERVICE_ROLE_KEY=build-placeholder
 ENV SUPABASE_URL=http://localhost:8000
 
 COPY package.json yarn.lock ./

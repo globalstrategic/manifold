@@ -1,0 +1,72 @@
+name: 'Fetch Secrets'
+description: 'Install Doppler, download secrets, output as JSON'
+
+inputs:
+  doppler_token:
+    description: 'Doppler token for fetching secrets'
+    required: true
+
+outputs:
+  secrets_file:
+    description: 'Path to secrets JSON file'
+    value: ${{ steps.download.outputs.secrets_file }}
+  CLOUDFLARE_ZONE_ID:
+    description: 'Cloudflare Zone ID'
+    value: ${{ steps.extract.outputs.CLOUDFLARE_ZONE_ID }}
+  CLOUDFLARE_API_TOKEN:
+    description: 'Cloudflare API Token'
+    value: ${{ steps.extract.outputs.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ORIGIN_CERT:
+    description: 'Cloudflare Origin CA Certificate'
+    value: ${{ steps.extract.outputs.CLOUDFLARE_ORIGIN_CERT }}
+  CLOUDFLARE_ORIGIN_KEY:
+    description: 'Cloudflare Origin CA Private Key'
+    value: ${{ steps.extract.outputs.CLOUDFLARE_ORIGIN_KEY }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Doppler CLI
+      uses: dopplerhq/cli-action@v3
+
+    - name: Download Doppler secrets
+      id: download
+      shell: bash
+      env:
+        DOPPLER_TOKEN: ${{ inputs.doppler_token }}
+      run: |
+        SECRETS_FILE=/tmp/doppler_secrets.json
+        doppler secrets download --no-file --format json > $SECRETS_FILE
+        echo "secrets_file=$SECRETS_FILE" >> $GITHUB_OUTPUT
+
+    - name: Extract common secrets as outputs
+      id: extract
+      shell: bash
+      env:
+        SECRETS_FILE: ${{ steps.download.outputs.secrets_file }}
+      run: |
+        # Helper to get secret and mask sensitive ones
+        get_and_output() {
+          local key=$1
+          local mask=${2:-false}
+          local value=$(jq -r ".${key} // empty" "$SECRETS_FILE")
+          if [ "$mask" = "true" ] && [ -n "$value" ]; then
+            echo "::add-mask::$value"
+          fi
+          echo "${key}=${value}" >> $GITHUB_OUTPUT
+        }
+
+        # Non-sensitive
+        get_and_output CLOUDFLARE_ZONE_ID
+
+        # Sensitive (mask)
+        get_and_output CLOUDFLARE_API_TOKEN true
+
+        # Multi-line secrets (use heredoc)
+        echo "CLOUDFLARE_ORIGIN_CERT<<ORIGCERTEOF" >> $GITHUB_OUTPUT
+        jq -r '.CLOUDFLARE_ORIGIN_CERT // empty' "$SECRETS_FILE" >> $GITHUB_OUTPUT
+        echo "ORIGCERTEOF" >> $GITHUB_OUTPUT
+
+        echo "CLOUDFLARE_ORIGIN_KEY<<ORIGKEYEOF" >> $GITHUB_OUTPUT
+        jq -r '.CLOUDFLARE_ORIGIN_KEY // empty' "$SECRETS_FILE" >> $GITHUB_OUTPUT
+        echo "ORIGKEYEOF" >> $GITHUB_OUTPUT

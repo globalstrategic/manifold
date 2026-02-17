@@ -9,3 +9,8 @@ dev-mantic-markets-firebase-adminsdk*.json
 mantic-markets-firebase-adminsdk*.json
 
 .env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup

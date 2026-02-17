@@ -27,3 +27,9 @@ variable "static_ip_name" {
   type        = string
   default     = ""
 }
+
+variable "github_repo" {
+  description = "GitHub repo in owner/name format for Workload Identity Federation"
+  type        = string
+  default     = "globalstrategic/manifold"
+}

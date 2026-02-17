@@ -8,10 +8,6 @@ terraform {
     }
   }
 
-  backend "gcs" {
-    bucket = "manifold-terraform-state"
-    prefix = "manifold"
-  }
 }
 
 provider "google" {
@@ -22,6 +18,62 @@ provider "google" {
 
 locals {
   static_ip_name = var.static_ip_name != "" ? var.static_ip_name : "${var.instance_name}-ip"
+}
+
+# --- Workload Identity Federation for GitHub Actions ---
+
+resource "google_iam_workload_identity_pool" "github" {
+  workload_identity_pool_id = "github-pool"
+  display_name              = "GitHub Actions"
+  description               = "Pool for GitHub Actions OIDC"
+}
+
+resource "google_iam_workload_identity_pool_provider" "github" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-provider"
+  display_name                       = "GitHub Actions Provider"
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  attribute_condition = "assertion.repository == \"${var.github_repo}\""
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+resource "google_service_account" "manifold_provisioner" {
+  account_id   = "manifold-provisioner"
+  display_name = "Manifold Provisioner"
+  description  = "Used by GitHub Actions to provision and deploy"
+}
+
+resource "google_project_iam_member" "provisioner_compute_admin" {
+  project = var.project_id
+  role    = "roles/compute.admin"
+  member  = "serviceAccount:${google_service_account.manifold_provisioner.email}"
+}
+
+resource "google_project_iam_member" "provisioner_iap_tunnel" {
+  project = var.project_id
+  role    = "roles/iap.tunnelResourceAccessor"
+  member  = "serviceAccount:${google_service_account.manifold_provisioner.email}"
+}
+
+resource "google_project_iam_member" "provisioner_service_account_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.manifold_provisioner.email}"
+}
+
+resource "google_service_account_iam_member" "wif_impersonation" {
+  service_account_id = google_service_account.manifold_provisioner.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
 }
 
 resource "google_compute_address" "static_ip" {

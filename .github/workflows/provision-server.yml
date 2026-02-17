@@ -74,10 +74,7 @@ jobs:
 
       - name: Terraform init
         working-directory: infra
-        run: |
-          terraform init \
-            -backend-config="bucket=manifold-terraform-state" \
-            -backend-config="prefix=${{ env.INSTANCE_NAME }}"
+        run: terraform init
 
       - name: Terraform apply
         id: terraform

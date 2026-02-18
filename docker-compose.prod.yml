@@ -43,7 +43,6 @@ services:
       SELF_HOSTED: "true"
       PORT: "80"
       GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
-      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
       SUPABASE_DB_HOST: db
       SUPABASE_DB_PORT: ${POSTGRES_PORT:-5432}
       SUPABASE_PASSWORD: ${POSTGRES_PASSWORD}
@@ -62,8 +61,6 @@ services:
       FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET}
       FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID}
       FIREBASE_APP_ID: ${FIREBASE_APP_ID}
-    volumes:
-      - ${GOOGLE_ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/gcp/adc.json:ro
 
   manifold-web:
     image: ghcr.io/globalstrategic/manifold-web:latest
@@ -94,7 +91,6 @@ services:
     environment:
       SELF_HOSTED: "true"
       GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
-      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
       SUPABASE_DB_HOST: db
       SUPABASE_DB_PORT: ${POSTGRES_PORT:-5432}
       SUPABASE_PASSWORD: ${POSTGRES_PASSWORD}
@@ -113,8 +109,6 @@ services:
       FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET}
       FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID}
       FIREBASE_APP_ID: ${FIREBASE_APP_ID}
-    volumes:
-      - ${GOOGLE_ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/gcp/adc.json:ro
     command: ["node", "backend/scheduler/lib/index.js"]
 
   # ─── Nginx Reverse Proxy ────────────────────────────────────────────────────

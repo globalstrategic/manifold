@@ -125,7 +125,7 @@ jobs:
       - name: Setup application on VM
         run: |
           # Prepare secrets as base64 env file for safe SSH transfer
-          SECRETS_ENV=$(jq -r 'to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
+          SECRETS_ENV=$(jq -r 'del(.CLOUDFLARE_ORIGIN_CERT, .CLOUDFLARE_ORIGIN_KEY) | to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
 
           gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
             --zone ${{ inputs.zone }} \
@@ -167,7 +167,7 @@ jobs:
       - name: Start all services
         run: |
           # Prepare secrets as base64 env file for safe SSH transfer
-          SECRETS_ENV=$(jq -r 'to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
+          SECRETS_ENV=$(jq -r 'del(.CLOUDFLARE_ORIGIN_CERT, .CLOUDFLARE_ORIGIN_KEY) | to_entries[] | "\(.key)=\(.value)"' "${{ steps.secrets.outputs.secrets_file }}" | base64 -w0)
 
           gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
             --zone ${{ inputs.zone }} \

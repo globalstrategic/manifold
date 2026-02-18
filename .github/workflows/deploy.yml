@@ -179,7 +179,7 @@ jobs:
           ZONE="${{ github.event.inputs.zone || 'us-central1-a' }}"
 
           # Prepare secrets as base64 env file for safe SSH transfer
-          SECRETS_ENV=$(jq -r 'to_entries[] | "\(.key)=\(.value)"' "$SECRETS_FILE" | base64 -w0)
+          SECRETS_ENV=$(jq -r 'del(.CLOUDFLARE_ORIGIN_CERT, .CLOUDFLARE_ORIGIN_KEY) | to_entries[] | "\(.key)=\(.value)"' "$SECRETS_FILE" | base64 -w0)
 
           gcloud beta compute ssh ${{ env.INSTANCE_NAME }} \
             --zone "$ZONE" \

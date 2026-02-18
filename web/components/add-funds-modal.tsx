@@ -98,14 +98,26 @@ export function PriceTile(props: {
 }) {
   const { loadingPrice, onClick, amounts, index, user } = props
   const { mana, priceInDollars, bonusInDollars } = amounts
+  const isSelfHosted = process.env.SELF_HOSTED === 'true'
 
   const isCurrentlyLoading = loadingPrice === priceInDollars
   const disabled = props.disabled || (loadingPrice && !isCurrentlyLoading)
 
-  const onClickHandler = (e: React.MouseEvent) => {
+  const onClickHandler = async (e: React.MouseEvent) => {
     if (!user) {
       e.preventDefault()
       firebaseLogin()
+      return
+    }
+    if (isSelfHosted) {
+      e.preventDefault()
+      onClick()
+      try {
+        await api('add-free-mana', { amount: mana })
+        window.location.href = '/checkout?purchaseSuccess=true'
+      } catch (err) {
+        console.error('Failed to add free mana', err)
+      }
       return
     }
     onClick()
@@ -123,7 +135,7 @@ export function PriceTile(props: {
         'ring-indigo-600',
         isCurrentlyLoading && 'pointer-events-none animate-pulse cursor-wait'
       )}
-      type={'submit'}
+      type={isSelfHosted ? 'button' : 'submit'}
       onClick={onClickHandler}
     >
       <Col className={' w-full items-center rounded-t px-4 pb-2 pt-4'}>
@@ -170,12 +182,17 @@ export function PriceTile(props: {
           'bg-indigo-600'
         )}
       >
-        Buy ${priceInDollars}
+        {isSelfHosted ? `Get Ṁ${shortenNumber(mana)}` : `Buy $${priceInDollars}`}
       </div>
     </button>
   )
   const [url, setUrl] = useState('https://manifold.markets')
   useEffect(() => setUrl(window.location.href), [])
+
+  if (isSelfHosted) {
+    return <div>{tile}</div>
+  }
+
   return (
     <form
       action={checkoutURL(user?.id || '', amounts.priceInDollars, url)}

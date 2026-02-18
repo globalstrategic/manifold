@@ -44,6 +44,7 @@ import { searchContractPositions } from 'api/search-contract-positions'
 import { updateMarket } from 'api/update-market'
 import { verifyPhoneNumber } from 'api/verify-phone-number'
 import { type APIPath } from 'common/api/schema'
+import { addFreeMana } from './add-free-mana'
 import { addBounty } from './add-bounty'
 import { addLiquidity } from './add-liquidity'
 import { addOrRemoveTopicFromContract } from './add-topic-to-market'
@@ -310,6 +311,7 @@ export const handlers: { [k in APIPath]: APIHandler<k> } = {
   donate: donate,
   'convert-cash-to-mana': convertCashToMana,
   'convert-sp-to-mana': convertSpiceToMana,
+  'add-free-mana': addFreeMana,
   'market/:id/positions': getPositions,
   me: getMe,
   'me/update': updateMe,

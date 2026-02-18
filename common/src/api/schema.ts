@@ -1036,6 +1036,12 @@ export const API = (_apiTypeCheck = {
     authed: true,
     props: z.object({ amount: z.number().positive().finite().safe() }).strict(),
   },
+  'add-free-mana': {
+    method: 'POST',
+    visibility: 'private',
+    authed: true,
+    props: z.object({ amount: z.number().positive().finite().safe() }),
+  },
   'convert-cash-to-mana': {
     method: 'POST',
     visibility: 'public',

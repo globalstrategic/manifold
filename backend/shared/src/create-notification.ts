@@ -1,3 +1,4 @@
+import { DOMAIN } from 'common/envs/constants'
 import { Answer } from 'common/answer'
 import { Bet, LimitBet } from 'common/bet'
 import { ContractComment } from 'common/comment'
@@ -1807,7 +1808,7 @@ export const createAIDescriptionUpdateNotification = async (
     sourceContractId: contract.id,
     sourceUserName: 'Manifold AI',
     sourceUserUsername: 'ManifoldAI',
-    sourceUserAvatarUrl: 'https://manifold.markets/logo.svg',
+    sourceUserAvatarUrl: `https://${DOMAIN}/logo.svg`,
     sourceText: updateText.slice(0, 150),
     sourceContractTitle: question,
     sourceContractCreatorUsername: contract.creatorUsername,
@@ -1841,7 +1842,7 @@ export const createPendingClarificationNotification = async (
     sourceContractId: contract.id,
     sourceUserName: 'Manifold AI',
     sourceUserUsername: 'ManifoldAI',
-    sourceUserAvatarUrl: 'https://manifold.markets/logo.svg',
+    sourceUserAvatarUrl: `https://${DOMAIN}/logo.svg`,
     sourceText: clarificationText,
     sourceContractTitle: question,
     sourceContractCreatorUsername: contract.creatorUsername,

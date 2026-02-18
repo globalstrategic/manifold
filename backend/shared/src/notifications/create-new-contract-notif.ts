@@ -1,3 +1,4 @@
+import { DOMAIN } from 'common/envs/constants'
 import { Notification } from 'common/notification'
 import { User } from 'common/user'
 import { Contract } from 'common/contract'
@@ -101,6 +102,6 @@ export const createNewContractNotification = async (
     `${contractCreator.name} asked ${contract.question}`,
     'new-market-followed-user-bulk',
     bulkEmails,
-    `${contractCreator.name} on Manifold <no-reply@manifold.markets>`
+    `${contractCreator.name} on Manifold <no-reply@${DOMAIN}>`
   )
 }

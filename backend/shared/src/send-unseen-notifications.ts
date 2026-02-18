@@ -1,3 +1,4 @@
+import { DOMAIN } from 'common/envs/constants'
 import { createSupabaseDirectClient } from 'shared/supabase/init'
 import { log } from 'shared/utils'
 import { getNotificationDestinationsForUser } from 'common/user-notification-preferences'
@@ -100,7 +101,7 @@ export async function sendUnseenMarketMovementNotifications() {
 
           return {
             questionTitle: question!,
-            questionUrl: `https://manifold.markets/${creatorUsername}/${slug}`,
+            questionUrl: `https://${DOMAIN}/${creatorUsername}/${slug}`,
             prob: `${Math.round(endProb * 100)}%`,
             probChangeStyle: endProb > startProb ? greenBg : redBg,
             startProb,

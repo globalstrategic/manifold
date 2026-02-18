@@ -225,7 +225,7 @@ export const sendWelcomeEmail = async (
       unsubscribeUrl,
     },
     {
-      from: 'Stefanie from Manifold <stefanie@manifold.markets>',
+      from: `Stefanie from Manifold <stefanie@${DOMAIN}>`,
       'o:deliverytime': new Date(Date.now() + 2 * HOUR_MS).toUTCString(),
     }
   )
@@ -238,12 +238,12 @@ export const sendBulkEmails = async (
   subject: string,
   template: string,
   recipients: EmailAndTemplateEntry[],
-  from = `Manifold <no-reply@manifold.markets>`
+  from = `Manifold <no-reply@${DOMAIN}>`
 ) => {
   // Mailgun has a limit of 1000 recipients per batch
   const emailChunks = chunk(recipients, 1000)
   for (const chunk of emailChunks) {
-    const mailgunDomain = 'mg.manifold.markets'
+    const mailgunDomain = process.env.MAILGUN_DOMAIN ?? `mg.${DOMAIN}`
     const mailgunApiKey = process.env.MAILGUN_KEY as string
     const url = `https://api.mailgun.net/v3/${mailgunDomain}/messages`
     const data = new URLSearchParams()
@@ -253,9 +253,14 @@ export const sendBulkEmails = async (
     chunk.forEach(([recipientEmail, details]) => {
       data.append('to', `${details.name} <${recipientEmail}>`)
     })
+    const siteUrl = `https://${DOMAIN}`
+    const enrichedChunk = chunk.map(
+      ([email, details]) =>
+        [email, { ...details, siteUrl }] as EmailAndTemplateEntry
+    )
     data.append(
       'recipient-variables',
-      JSON.stringify(Object.fromEntries(chunk))
+      JSON.stringify(Object.fromEntries(enrichedChunk))
     )
 
     try {
@@ -291,7 +296,7 @@ export const sendPersonalFollowupEmail = async (
 
 Thanks for signing up! I'm one of the cofounders of Manifold, and was wondering how you've found your experience on the platform so far?
 
-If you haven't already, I encourage you to try creating your own prediction market (https://manifold.markets/create) and joining our Discord chat (https://discord.com/invite/eHQBNBqXuh).
+If you haven't already, I encourage you to try creating your own prediction market (https://${DOMAIN}/create) and joining our Discord chat (https://discord.com/invite/eHQBNBqXuh).
 
 Feel free to reply to this email with any questions or concerns you have.
 
@@ -299,7 +304,7 @@ Cheers,
 
 James
 Cofounder of Manifold
-https://manifold.markets
+https://${DOMAIN}
  `
 
   await sendTextEmail(
@@ -307,7 +312,7 @@ https://manifold.markets
     'How are you finding Manifold?',
     emailBody,
     {
-      from: 'James from Manifold <james@manifold.markets>',
+      from: `James from Manifold <james@${DOMAIN}>`,
       'o:deliverytime': sendTime,
     }
   )
@@ -335,7 +340,7 @@ export const sendCreatorGuideEmail = async (
       unsubscribeUrl,
     },
     {
-      from: 'Stefanie from Manifold <stefanie@manifold.markets>',
+      from: `Stefanie from Manifold <stefanie@${DOMAIN}>`,
     }
   )
 }
@@ -364,7 +369,7 @@ export const sendUnactivatedNewUserEmail = async (
       unsubscribeUrl,
     },
     {
-      from: 'Ian from Manifold <ian@manifold.markets>',
+      from: `Ian from Manifold <ian@${DOMAIN}>`,
     }
   )
 }
@@ -392,7 +397,7 @@ export const sendThankYouEmail = async (
       unsubscribeUrl,
     },
     {
-      from: 'Stefanie from Manifold <stefanie@manifold.markets>',
+      from: `Stefanie from Manifold <stefanie@${DOMAIN}>`,
     }
   )
 }
@@ -500,7 +505,7 @@ export const sendNewAnswerEmail = async (
   const marketUrl = `https://${DOMAIN}/${creatorUsername}/${slug}`
 
   const subject = `New answer on ${question}`
-  const from = `${name} <info@manifold.markets>`
+  const from = `${name} <info@${DOMAIN}>`
 
   return await sendTemplateEmail(
     privateUser.email,
@@ -684,7 +689,7 @@ export const sendNewPrivateMarketEmail = async (
       groupName,
     },
     {
-      from: `${creatorName} on Manifold <no-reply@manifold.markets>`,
+      from: `${creatorName} on Manifold <no-reply@${DOMAIN}>`,
     }
   )
 }
@@ -746,7 +751,7 @@ export const sendNewUniqueBettorsEmail = async (
     'new-unique-traders',
     templateData,
     {
-      from: `Manifold <no-reply@manifold.markets>`,
+      from: `Manifold <no-reply@${DOMAIN}>`,
     }
   )
 }

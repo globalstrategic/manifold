@@ -52,7 +52,7 @@ services:
       SUPABASE_JWT_SECRET: ${JWT_SECRET}
       SUPABASE_INSTANCE_ID: self-hosted
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
+      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-PROD}
       API_SECRET: ${API_SECRET:-self-hosted-api-secret}
       DOMAIN: ${DOMAIN:-localhost}
       API_ENDPOINT: ${API_ENDPOINT:-localhost:8088}
@@ -71,8 +71,6 @@ services:
       context: .
       dockerfile: manifold-web.Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-localhost:8088}
-        NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     container_name: manifold-web
@@ -105,7 +103,7 @@ services:
       SUPABASE_JWT_SECRET: ${JWT_SECRET}
       SUPABASE_INSTANCE_ID: self-hosted
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-DEV}
+      NEXT_PUBLIC_FIREBASE_ENV: ${NEXT_PUBLIC_FIREBASE_ENV:-PROD}
       API_SECRET: ${API_SECRET:-self-hosted-api-secret}
       DOMAIN: ${DOMAIN:-localhost}
       API_ENDPOINT: ${API_ENDPOINT:-localhost:8088}

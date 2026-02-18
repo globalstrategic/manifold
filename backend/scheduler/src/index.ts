@@ -1,3 +1,4 @@
+import { DOMAIN } from 'common/envs/constants'
 import { initFirebase, initSecrets } from './utils'
 initFirebase()
 
@@ -34,9 +35,7 @@ async function start() {
     basicAuth({
       users: { admin: process.env.SCHEDULER_AUTH_PASSWORD ?? '' },
       challenge: true,
-      realm: prod
-        ? 'scheduler.manifold.markets'
-        : 'scheduler.dev.manifold.markets',
+      realm: `scheduler.${DOMAIN}`,
     })
   )
 

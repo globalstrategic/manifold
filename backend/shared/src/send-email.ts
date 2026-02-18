@@ -1,10 +1,12 @@
 import * as mailgun from 'mailgun-js'
+import { DOMAIN } from 'common/envs/constants'
 import { tryOrLogError } from 'shared/helpers/try-or-log-error'
 import { log } from './utils'
 
 const initMailgun = () => {
   const apiKey = process.env.MAILGUN_KEY as string
-  return mailgun({ apiKey, domain: 'mg.manifold.markets' })
+  const mailgunDomain = process.env.MAILGUN_DOMAIN ?? `mg.${DOMAIN}`
+  return mailgun({ apiKey, domain: mailgunDomain })
 }
 
 export const sendTextEmail = async (
@@ -15,7 +17,7 @@ export const sendTextEmail = async (
 ) => {
   const data: mailgun.messages.SendData = {
     ...options,
-    from: options?.from ?? 'Manifold <info@manifold.markets>',
+    from: options?.from ?? `Manifold <info@${DOMAIN}>`,
     to,
     subject,
     text,
@@ -39,11 +41,14 @@ export const sendTemplateEmail = async (
 ) => {
   const data: mailgun.messages.SendTemplateData = {
     ...options,
-    from: options?.from ?? 'Manifold <info@manifold.markets>',
+    from: options?.from ?? `Manifold <info@${DOMAIN}>`,
     to,
     subject,
     template: templateId,
-    'h:X-Mailgun-Variables': JSON.stringify(templateData),
+    'h:X-Mailgun-Variables': JSON.stringify({
+      ...templateData,
+      siteUrl: `https://${DOMAIN}`,
+    }),
     'o:tag': templateId,
     'o:tracking': true,
   }

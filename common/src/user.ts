@@ -170,9 +170,8 @@ export const PAST_BET = ENV_CONFIG.verbPastBet // predicted (verb)
 export type UserAndPrivateUser = { user: User; privateUser: PrivateUser }
 export const MANIFOLD_USER_USERNAME = 'Manifold'
 export const MANIFOLD_USER_NAME = 'Manifold'
-export const MANIFOLD_AVATAR_URL = 'https://manifold.markets/logo.png'
-export const MANIFOLD_LOVE_LOGO =
-  'https://manifold.markets/manifold_love_logo.svg'
+export const MANIFOLD_AVATAR_URL = `https://${ENV_CONFIG.domain}/logo.png`
+export const MANIFOLD_LOVE_LOGO = `https://${ENV_CONFIG.domain}/manifold_love_logo.svg`
 
 export function getCurrentUtcTime(): Date {
   const currentDate = new Date()

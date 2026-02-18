@@ -1,4 +1,5 @@
 import { generateJSON } from '@tiptap/html'
+import { DOMAIN } from 'common/envs/constants'
 import { APIError, getCloudRunServiceUrl } from 'common/api/utils'
 import {
   Contract,
@@ -340,7 +341,7 @@ export const getUserByUsername = async (
 }
 
 export function contractUrl(contract: Contract) {
-  return `https://manifold.markets${contractPath(contract)}`
+  return `https://${DOMAIN}${contractPath(contract)}`
 }
 
 export async function getTrendingContractsToEmail() {

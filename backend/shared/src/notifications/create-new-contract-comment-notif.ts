@@ -1,3 +1,4 @@
+import { DOMAIN } from 'common/envs/constants'
 import {
   CommentNotificationData,
   Notification,
@@ -240,7 +241,7 @@ export const createCommentOnContractNotification = async (
     `Comment on ${sourceContract.question}`,
     'market-comment-bulk',
     bulkEmails,
-    `${sourceUser.name} on Manifold <no-reply@manifold.markets>`
+    `${sourceUser.name} on Manifold <no-reply@${DOMAIN}>`
   )
 }
 
@@ -466,7 +467,7 @@ export const createCommentOnPostNotification = async (
       `Comment on post: ${postTitle}`,
       'market-comment-bulk',
       bulkEmails,
-      `${commentCreator.name} on Manifold <no-reply@manifold.markets>`
+      `${commentCreator.name} on Manifold <no-reply@${DOMAIN}>`
     )
   }
 

@@ -1,4 +1,5 @@
 const API_DOCS_URL = 'https://docs.manifold.markets/api'
+const SELF_HOSTED_DOMAIN = process.env.DOMAIN
 
 /** @type {import('next').NextConfig} */
 module.exports = {
@@ -48,6 +49,7 @@ module.exports = {
       { hostname: 'storage.googleapis.com' },
       { hostname: 'picsum.photos' },
       { hostname: '*.giphy.com' },
+      ...(SELF_HOSTED_DOMAIN ? [{ hostname: SELF_HOSTED_DOMAIN }] : []),
     ],
   },
   turbopack: {
@@ -115,26 +117,28 @@ module.exports = {
         destination: '/VersusBot?tab=questions',
         permanent: false,
       },
-      {
-        source: '/privacy',
-        destination: 'https://docs.manifold.markets/privacy-policy',
-        permanent: true,
-      },
-      {
-        source: '/terms',
-        destination: 'https://docs.manifold.markets/terms',
-        permanent: true,
-      },
-      {
-        source: '/mana-only-terms',
-        destination: 'https://docs.manifold.markets/terms',
-        permanent: true,
-      },
-      {
-        source: '/sweepstakes-rules',
-        destination: 'https://docs.manifold.markets/sweepstakes-rules',
-        permanent: true,
-      },
+      ...(process.env.SELF_HOSTED !== 'true' ? [
+        {
+          source: '/privacy',
+          destination: 'https://docs.manifold.markets/privacy-policy',
+          permanent: true,
+        },
+        {
+          source: '/terms',
+          destination: 'https://docs.manifold.markets/terms',
+          permanent: true,
+        },
+        {
+          source: '/mana-only-terms',
+          destination: 'https://docs.manifold.markets/terms',
+          permanent: true,
+        },
+        {
+          source: '/sweepstakes-rules',
+          destination: 'https://docs.manifold.markets/sweepstakes-rules',
+          permanent: true,
+        },
+      ] : []),
       {
         source: '/umami',
         destination:

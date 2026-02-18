@@ -70,6 +70,12 @@ resource "google_project_iam_member" "provisioner_service_account_user" {
   member  = "serviceAccount:${google_service_account.manifold_provisioner.email}"
 }
 
+resource "google_project_iam_member" "provisioner_os_login" {
+  project = var.project_id
+  role    = "roles/compute.osLogin"
+  member  = "serviceAccount:${google_service_account.manifold_provisioner.email}"
+}
+
 resource "google_service_account_iam_member" "wif_impersonation" {
   service_account_id = google_service_account.manifold_provisioner.name
   role               = "roles/iam.workloadIdentityUser"

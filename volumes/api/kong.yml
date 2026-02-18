@@ -97,7 +97,7 @@ services:
       - name: cors
         config:
           origins:
-            - http://localhost:3000
+            - '*'
           credentials: true
           preflight_continue: false
       - name: key-auth

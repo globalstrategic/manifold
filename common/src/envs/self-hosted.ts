@@ -1,35 +1,27 @@
 import { EnvConfig } from './prod'
 
-function requireEnv(name: string): string {
-  const value = process.env[name]
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`)
-  }
-  return value
-}
-
 let _config: EnvConfig | undefined
 
 export function getSelfHostedConfig(): EnvConfig {
   if (!_config) {
     _config = {
-      domain: requireEnv('DOMAIN'),
+      domain: process.env.DOMAIN ?? '',
       firebaseConfig: {
-        apiKey: requireEnv('FIREBASE_API_KEY'),
-        authDomain: requireEnv('FIREBASE_AUTH_DOMAIN'),
-        projectId: requireEnv('FIREBASE_PROJECT_ID'),
+        apiKey: process.env.FIREBASE_API_KEY ?? '',
+        authDomain: process.env.FIREBASE_AUTH_DOMAIN ?? '',
+        projectId: process.env.FIREBASE_PROJECT_ID ?? '',
         region: process.env.FIREBASE_REGION ?? 'us-central1',
-        storageBucket: requireEnv('FIREBASE_STORAGE_BUCKET'),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? '',
         privateBucket: process.env.FIREBASE_PRIVATE_BUCKET ?? '',
-        messagingSenderId: requireEnv('FIREBASE_MESSAGING_SENDER_ID'),
-        appId: requireEnv('FIREBASE_APP_ID'),
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID ?? '',
+        appId: process.env.FIREBASE_APP_ID ?? '',
         measurementId: process.env.FIREBASE_MEASUREMENT_ID ?? '',
       },
       amplitudeApiKey: process.env.AMPLITUDE_API_KEY ?? '',
       supabaseInstanceId: process.env.SUPABASE_INSTANCE_ID ?? 'self-hosted',
-      supabaseAnonKey: requireEnv('SUPABASE_ANON_KEY'),
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? '',
       twitchBotEndpoint: process.env.TWITCH_BOT_ENDPOINT ?? '',
-      apiEndpoint: requireEnv('API_ENDPOINT'),
+      apiEndpoint: process.env.API_ENDPOINT ?? '',
       googleAnalyticsId: process.env.GOOGLE_ANALYTICS_ID ?? '',
       cloudRunId: process.env.CLOUD_RUN_ID ?? 'self-hosted',
       cloudRunRegion: process.env.CLOUD_RUN_REGION ?? 'local',

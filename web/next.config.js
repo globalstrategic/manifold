@@ -2,6 +2,21 @@ const API_DOCS_URL = 'https://docs.manifold.markets/api'
 
 /** @type {import('next').NextConfig} */
 module.exports = {
+  env: {
+    SELF_HOSTED: process.env.SELF_HOSTED,
+    DOMAIN: process.env.DOMAIN,
+    FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
+    FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_REGION: process.env.FIREBASE_REGION,
+    FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
+    FIREBASE_PRIVATE_BUCKET: process.env.FIREBASE_PRIVATE_BUCKET,
+    FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    FIREBASE_APP_ID: process.env.FIREBASE_APP_ID,
+    FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+    API_ENDPOINT: process.env.API_ENDPOINT,
+  },
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
   // eslint config moved - run `next lint` separately in CI

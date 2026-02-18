@@ -77,6 +77,9 @@ services:
         condition: service_started
     ports:
       - "3000:3000"
+    environment:
+      SELF_HOSTED: "true"
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
 
   manifold-scheduler:
     image: ghcr.io/globalstrategic/manifold-api:latest

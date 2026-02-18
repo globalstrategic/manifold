@@ -51,7 +51,10 @@ COPY tsconfig* ./
 
 # Compilation succeeds; static page generation may fail (no real backend).
 # Pages that fail to prerender are served dynamically at runtime.
-RUN yarn --cwd=web build; exit 0
+RUN yarn --cwd=web build; \
+    if [ ! -f web/.next/prerender-manifest.json ]; then \
+      echo '{"version":4,"routes":{},"dynamicRoutes":{},"notFoundRoutes":[],"preview":{"previewModeId":"placeholder","previewModeSigningKey":"placeholder","previewModeEncryptionKey":"placeholder"}}' > web/.next/prerender-manifest.json; \
+    fi
 
 FROM node:20-alpine
 WORKDIR /app

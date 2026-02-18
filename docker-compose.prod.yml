@@ -81,6 +81,7 @@ services:
     environment:
       SELF_HOSTED: "true"
       SUPABASE_URL: http://kong:8000
+      INTERNAL_API_URL: http://manifold-api:80
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
 
   manifold-scheduler:

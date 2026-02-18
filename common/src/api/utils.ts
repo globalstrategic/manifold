@@ -47,6 +47,8 @@ export function getApiUrl(path: string) {
 
   if (process.env.NEXT_PUBLIC_API_URL) {
     return `http://${process.env.NEXT_PUBLIC_API_URL}/${path}`
+  } else if (process.env.INTERNAL_API_URL) {
+    return `${process.env.INTERNAL_API_URL}/${path}`
   } else {
     const { apiEndpoint } = ENV_CONFIG
     return `https://${apiEndpoint}/${path}`

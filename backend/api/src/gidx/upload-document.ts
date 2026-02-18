@@ -1,7 +1,6 @@
 import { getIdentityVerificationDocuments } from 'api/gidx/get-verification-documents'
 import { APIError, APIHandler } from 'api/helpers/endpoint'
-import { DEV_CONFIG } from 'common/envs/dev'
-import { PROD_CONFIG } from 'common/envs/prod'
+import { ENV_CONFIG } from 'common/envs/constants'
 import { DocumentRegistrationResponse } from 'common/gidx/gidx'
 import * as admin from 'firebase-admin'
 import { track } from 'shared/analytics'
@@ -79,9 +78,7 @@ const deleteFileFromFirebase = async (fileUrl: string) => {
   const bucket = admin
     .storage()
     .bucket(
-      isProd()
-        ? PROD_CONFIG.firebaseConfig.privateBucket
-        : DEV_CONFIG.firebaseConfig.privateBucket
+      ENV_CONFIG.firebaseConfig.privateBucket
     )
   const filePath = decodeURIComponent(fileUrl.split('/o/')[1].split('?')[0])
   const file = bucket.file(filePath)

@@ -1,6 +1,4 @@
-import { RESERVED_PATHS } from 'common/envs/constants'
-import { DEV_CONFIG } from 'common/envs/dev'
-import { PROD_CONFIG } from 'common/envs/prod'
+import { ENV_CONFIG, RESERVED_PATHS } from 'common/envs/constants'
 import { PrivateUser } from 'common/user'
 import { getDefaultNotificationPreferences } from 'common/user-notification-preferences'
 import { cleanDisplayName, cleanUsername } from 'common/util/clean-username'
@@ -257,9 +255,7 @@ async function upsertNewUserEmbeddings(
 }
 
 export function getStorageBucket() {
-  const id = isProd()
-    ? PROD_CONFIG.firebaseConfig.storageBucket
-    : DEV_CONFIG.firebaseConfig.storageBucket
+  const id = ENV_CONFIG.firebaseConfig.storageBucket
   return getStorage().bucket(id)
 }
 

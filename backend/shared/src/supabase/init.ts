@@ -1,5 +1,4 @@
-import { DEV_CONFIG } from 'common/envs/dev'
-import { PROD_CONFIG } from 'common/envs/prod'
+import { ENV_CONFIG } from 'common/envs/constants'
 import { createClient } from 'common/supabase/utils'
 import { HOUR_MS } from 'common/util/time'
 import * as pgPromise from 'pg-promise'
@@ -71,8 +70,7 @@ export type SupabaseDirectClient =
 
 export function getInstanceId() {
   return (
-    process.env.SUPABASE_INSTANCE_ID ??
-    (isProd() ? PROD_CONFIG.supabaseInstanceId : DEV_CONFIG.supabaseInstanceId)
+    process.env.SUPABASE_INSTANCE_ID ?? ENV_CONFIG.supabaseInstanceId
   )
 }
 export function getRestInstanceId() {

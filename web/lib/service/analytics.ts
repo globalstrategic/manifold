@@ -10,7 +10,9 @@ import { QuestType } from 'common/quest'
 import { run, SupabaseClient } from 'common/supabase/utils'
 import { Json } from 'common/supabase/schema'
 
-amplitude.init(ENV_CONFIG.amplitudeApiKey, undefined)
+if (ENV_CONFIG.amplitudeApiKey) {
+  amplitude.init(ENV_CONFIG.amplitudeApiKey, undefined)
+}
 
 type EventIds = {
   contractId?: string | null
@@ -21,9 +23,10 @@ type EventIds = {
 type EventData = Record<string, Json | undefined>
 
 export async function track(name: string, properties?: EventIds & EventData) {
-  const deviceId = amplitude.getDeviceId()
-  const sessionId = amplitude.getSessionId()
-  const userId = amplitude.getUserId()
+  const hasAmplitude = !!ENV_CONFIG.amplitudeApiKey
+  const deviceId = hasAmplitude ? amplitude.getDeviceId() : undefined
+  const sessionId = hasAmplitude ? amplitude.getSessionId() : undefined
+  const userId = hasAmplitude ? amplitude.getUserId() : undefined
   const isNative = getIsNative()
 
   // mqp: did you know typescript can't type `const x = { a: b, ...c }` correctly?
@@ -36,8 +39,7 @@ export async function track(name: string, properties?: EventIds & EventData) {
 
   const { contractId, adId, commentId, ...data } = allProperties
   try {
-    if (ENV !== 'PROD') {
-      console.log(name, userId, allProperties)
+    if (ENV !== 'PROD' || !hasAmplitude) {
       await insertUserEvent(name, data, db, userId, contractId, commentId, adId)
       return
     }
@@ -70,6 +72,7 @@ export const withTracking =
   }
 
 export function identifyUser(userId: string | null) {
+  if (!ENV_CONFIG.amplitudeApiKey) return
   if (userId) {
     amplitude.setUserId(userId)
   } else {
@@ -78,12 +81,14 @@ export function identifyUser(userId: string | null) {
 }
 
 export async function setUserProperty(property: string, value: string) {
+  if (!ENV_CONFIG.amplitudeApiKey) return
   const identifyObj = new amplitude.Identify()
   identifyObj.set(property, value)
   await amplitude.identify(identifyObj).promise
 }
 
 export async function setOnceUserProperty(property: string, value: string) {
+  if (!ENV_CONFIG.amplitudeApiKey) return
   const identifyObj = new amplitude.Identify()
   identifyObj.setOnce(property, value)
   await amplitude.identify(identifyObj).promise

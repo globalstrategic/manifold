@@ -5,6 +5,9 @@ inputs:
   dns_names:
     description: 'Space-separated DNS record names (e.g., "manifold manifold-api manifold-db manifold-studio")'
     required: true
+  base_domain:
+    description: 'Base domain (e.g. mikhailtal.dev)'
+    required: true
   static_ip:
     description: 'IP address for DNS records'
     required: true
@@ -24,11 +27,13 @@ runs:
         STATIC_IP="${{ inputs.static_ip }}"
         DNS_NAMES="${{ inputs.dns_names }}"
 
+        BASE_DOMAIN="${{ inputs.base_domain }}"
+
         for NAME in $DNS_NAMES; do
           if [ "$NAME" = "@" ]; then
-            DISPLAY="mikhailtal.dev"
+            DISPLAY="${BASE_DOMAIN}"
           else
-            DISPLAY="${NAME}.mikhailtal.dev"
+            DISPLAY="${NAME}.${BASE_DOMAIN}"
           fi
 
           echo "Ensuring DNS record for ${DISPLAY}..."

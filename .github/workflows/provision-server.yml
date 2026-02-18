@@ -92,11 +92,14 @@ jobs:
       - name: Setup domains
         id: domains
         uses: ./.github/actions/setup-domains
+        with:
+          base_domain: ${{ steps.secrets.outputs.BASE_DOMAIN }}
 
       - name: Create Cloudflare DNS records
         uses: ./.github/actions/ensure-dns
         with:
           dns_names: ${{ steps.domains.outputs.dns_names }}
+          base_domain: ${{ steps.secrets.outputs.BASE_DOMAIN }}
           static_ip: ${{ steps.terraform.outputs.static_ip }}
           cloudflare_zone_id: ${{ steps.secrets.outputs.CLOUDFLARE_ZONE_ID }}
           cloudflare_api_token: ${{ steps.secrets.outputs.CLOUDFLARE_API_TOKEN }}

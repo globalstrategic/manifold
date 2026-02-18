@@ -1,9 +1,14 @@
 name: 'Setup Domains'
 description: 'Configure subdomains for Manifold deployment'
 
+inputs:
+  base_domain:
+    description: 'Base domain (e.g. mikhailtal.dev)'
+    required: true
+
 outputs:
   main_domain:
-    description: 'Main domain (manifold.mikhailtal.dev)'
+    description: 'Main domain'
     value: ${{ steps.domains.outputs.main_domain }}
   api_domain:
     description: 'API subdomain'
@@ -25,8 +30,9 @@ runs:
       id: domains
       shell: bash
       run: |
-        echo "main_domain=manifold.mikhailtal.dev" >> $GITHUB_OUTPUT
-        echo "api_domain=manifold-api.mikhailtal.dev" >> $GITHUB_OUTPUT
-        echo "db_domain=manifold-db.mikhailtal.dev" >> $GITHUB_OUTPUT
-        echo "studio_domain=manifold-studio.mikhailtal.dev" >> $GITHUB_OUTPUT
+        BASE="${{ inputs.base_domain }}"
+        echo "main_domain=manifold.${BASE}" >> $GITHUB_OUTPUT
+        echo "api_domain=manifold-api.${BASE}" >> $GITHUB_OUTPUT
+        echo "db_domain=manifold-db.${BASE}" >> $GITHUB_OUTPUT
+        echo "studio_domain=manifold-studio.${BASE}" >> $GITHUB_OUTPUT
         echo "dns_names=manifold manifold-api manifold-db manifold-studio" >> $GITHUB_OUTPUT

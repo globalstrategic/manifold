@@ -71,13 +71,15 @@ export const getMarketLoanMax: APIHandler<'get-market-loan-max'> = async (
   })
 
   // Get user's portfolio for total loan across all markets
-  const portfolioMetric = await pg.oneOrNone(
+  const portfolioRow = await pg.oneOrNone(
     `select *
      from user_portfolio_history_latest
      where user_id = $1`,
-    [auth.uid],
-    convertPortfolioHistory
+    [auth.uid]
   )
+  const portfolioMetric = portfolioRow
+    ? convertPortfolioHistory(portfolioRow)
+    : null
   const totalLoanAllMarkets = portfolioMetric?.loanTotal ?? 0
 
   // Get user's metrics for this contract and calculate portfolio value

@@ -148,7 +148,9 @@ jobs:
             docker-compose.yml \
             docker-compose.prod.yml \
             nginx.conf.template \
-            volumes/
+            volumes/ \
+            scripts/db-init.sh \
+            backend/supabase/
 
           gcloud beta compute scp /tmp/manifold-deploy.tar.gz \
             ${{ env.INSTANCE_NAME }}:/opt/manifold/deploy.tar.gz \
@@ -199,8 +201,28 @@ jobs:
               sudo docker pull ghcr.io/${{ github.repository_owner }}/manifold-api:latest || true
               sudo docker pull ghcr.io/${{ github.repository_owner }}/manifold-web:latest || true
 
-              # Start all services
-              sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+              COMPOSE_FILES='-f docker-compose.yml -f docker-compose.prod.yml'
+
+              # Start database first
+              echo 'Starting db...'
+              sudo docker compose \$COMPOSE_FILES up -d db
+              echo 'Waiting for db to be healthy...'
+              for i in {1..30}; do
+                if sudo docker inspect manifold-db --format='{{.State.Health.Status}}' 2>/dev/null | grep -q healthy; then
+                  echo 'DB is healthy'
+                  break
+                fi
+                echo \"Waiting for db health check... (\$i/30)\"
+                sleep 5
+              done
+
+              # Initialize database schema
+              echo 'Running database schema initialization...'
+              export PSQL='sudo docker exec -i manifold-db psql -U postgres -d postgres'
+              bash scripts/db-init.sh
+
+              # Start remaining services
+              sudo docker compose \$COMPOSE_FILES up -d
 
               echo 'All services started.'
               sudo docker ps

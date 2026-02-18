@@ -81,7 +81,7 @@ shell: ## Open a shell with Doppler env vars loaded
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 
-DBPSQL = $(DOP) bash -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -h 127.0.0.1 -p 54322 -U postgres -d postgres "$$@"' --
+DBPSQL = $(DOP) bash -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -h 127.0.0.1 -p $${POSTGRES_PORT:-5432} -U postgres -d postgres "$$@"' --
 
 .PHONY: psql
 psql: ## Connect to the local PostgreSQL database
@@ -99,7 +99,7 @@ db-seed: ## Run Manifold seed.sql against local database
 db-migrate: ## Run Supabase migrations
 	@for f in backend/supabase/migrations/*.sql; do \
 		echo "Applying $$f..."; \
-		$(DOP) bash -c "PGPASSWORD=\$$POSTGRES_PASSWORD psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f $$f"; \
+		$(DOP) bash -c "PGPASSWORD=\$$POSTGRES_PASSWORD psql -h 127.0.0.1 -p \$${POSTGRES_PORT:-5432} -U postgres -d postgres -f $$f"; \
 	done
 
 .PHONY: db-reset

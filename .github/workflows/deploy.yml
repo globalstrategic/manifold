@@ -10,6 +10,11 @@ on:
         description: 'GCP zone where the instance is located'
         required: false
         default: 'us-central1-a'
+      run_db_init:
+        description: 'Run database schema initialization (db-init)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -154,7 +159,9 @@ jobs:
             docker-compose.yml \
             docker-compose.prod.yml \
             nginx.conf.template \
-            volumes/
+            volumes/ \
+            scripts/db-init.sh \
+            backend/supabase/
 
           gcloud beta compute scp /tmp/manifold-deploy.tar.gz \
             ${{ env.INSTANCE_NAME }}:/opt/manifold/deploy.tar.gz \
@@ -226,6 +233,13 @@ jobs:
                 echo \"Waiting for db health check... (\$i/30)\"
                 sleep 5
               done
+
+              # Run db-init if requested (first deploy or schema changes)
+              if [ '${{ github.event.inputs.run_db_init }}' = 'true' ]; then
+                echo 'Running database schema initialization...'
+                export PSQL='sudo docker exec -i manifold-db psql -U postgres -d postgres'
+                bash scripts/db-init.sh
+              fi
 
               echo 'Starting kong...'
               sudo docker compose \$COMPOSE_FILES up -d kong

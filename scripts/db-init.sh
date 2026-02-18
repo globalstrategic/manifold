@@ -3,8 +3,13 @@
 # Fixes known syntax bugs in auto-generated SQL and applies files in dependency order.
 set -uo pipefail
 
-export PGPASSWORD="$POSTGRES_PASSWORD"
-PSQL="psql -h 127.0.0.1 -p 54322 -U postgres -d postgres"
+# PSQL can be overridden for docker exec usage:
+#   export PSQL="docker exec -i manifold-db psql -U postgres -d postgres"
+if [ -z "${PSQL:-}" ]; then
+  export PGPASSWORD="$POSTGRES_PASSWORD"
+  DB_PORT="${POSTGRES_PORT:-5432}"
+  PSQL="psql -h 127.0.0.1 -p $DB_PORT -U postgres -d postgres"
+fi
 
 apply_sql() {
   local file="$1"
@@ -40,7 +45,7 @@ apply_functions_sql() {
 SCHEMA_DIR="backend/supabase"
 
 echo "==> Phase 1: seed.sql (extensions, roles, text search configs)"
-$PSQL -f "$SCHEMA_DIR/seed.sql" 2>&1 | grep -iE "^(psql|ERROR)" || true
+cat "$SCHEMA_DIR/seed.sql" | $PSQL -f - 2>&1 | grep -iE "^(psql|ERROR)" || true
 
 echo ""
 echo "==> Phase 2: functions.sql (helper functions — some will fail, re-applied later)"

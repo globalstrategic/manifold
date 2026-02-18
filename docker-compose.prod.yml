@@ -70,6 +70,7 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+        API_ENDPOINT: ${API_ENDPOINT:-localhost:8088}
     container_name: manifold-web
     restart: unless-stopped
     depends_on:

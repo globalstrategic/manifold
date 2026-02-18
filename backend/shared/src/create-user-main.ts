@@ -81,10 +81,16 @@ export const createUserMain = async (
   const rawName = fbUser.displayName || emailName || 'User' + randomString(4)
   const name = cleanDisplayName(rawName)
 
-  const bucket = getStorageBucket()
-  const avatarUrl = fbUser.photoURL
-    ? fbUser.photoURL
-    : await generateAvatarUrl(userId, name, bucket)
+  let avatarUrl = fbUser.photoURL ?? ''
+  if (!avatarUrl) {
+    try {
+      const bucket = getStorageBucket()
+      avatarUrl = await generateAvatarUrl(userId, name, bucket)
+    } catch (e) {
+      log('Failed to generate avatar, using default', e)
+      avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
+    }
+  }
 
   const pg = createSupabaseDirectClient()
 

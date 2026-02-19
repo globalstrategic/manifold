@@ -13,39 +13,32 @@ import { useMemo } from 'react'
 
 type UserEntry = LeaderboardEntry & {
   username: string
-  profit?: number
+  profit: number
   numTrades: number
   numQuestions: number
   investedAmount: number
 }
 
 export default function UsersPage() {
-  const { data: users, loading: usersLoading } = useAPIGetter('users', {
+  const { data: users, loading } = useAPIGetter('users', {
     limit: 500,
   })
 
-  const { data: profitEntries, loading: profitLoading } = useAPIGetter(
-    'leaderboard',
-    { kind: 'profit' as const, limit: 100 }
-  )
-
-  const loading = usersLoading || profitLoading
-
   const entries: UserEntry[] = useMemo(() => {
     if (!users) return []
-    const profitByUserId = new Map(
-      (profitEntries ?? []).map((e) => [e.userId, e.score])
-    )
-    return users.map((u) => ({
-      userId: u.id,
-      username: u.username,
-      score: u.balance,
-      profit: profitByUserId.get(u.id),
-      numTrades: u.numTrades ?? 0,
-      numQuestions: u.numQuestions ?? 0,
-      investedAmount: u.investedAmount ?? 0,
-    }))
-  }, [users, profitEntries])
+    return users.map((u) => {
+      const investedAmount = u.investedAmount ?? 0
+      return {
+        userId: u.id,
+        username: u.username,
+        score: u.balance,
+        profit: u.balance + investedAmount - u.totalDeposits,
+        numTrades: u.numTrades ?? 0,
+        numQuestions: u.numQuestions ?? 0,
+        investedAmount,
+      }
+    })
+  }, [users])
 
   const loadingColumns: LeaderboardColumn[] = [
     { header: 'Balance', renderCell: () => null },
@@ -65,7 +58,7 @@ export default function UsersPage() {
     },
     {
       header: 'Profit',
-      renderCell: (e) => formatMoney(e.profit ?? 0),
+      renderCell: (e) => formatMoney(e.profit),
     },
   ]
 

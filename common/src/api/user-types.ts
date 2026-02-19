@@ -16,6 +16,9 @@ export type FullUser = User & {
   isBot?: boolean
   isAdmin?: boolean
   isTrustworthy?: boolean
+  numTrades?: number
+  numQuestions?: number
+  investedAmount?: number
 }
 
 /**

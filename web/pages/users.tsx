@@ -8,12 +8,15 @@ import {
 } from 'web/components/leaderboard'
 import { SEO } from 'web/components/SEO'
 import { useAPIGetter } from 'web/hooks/use-api-getter'
-import { formatMoney } from 'common/util/format'
+import { formatMoney, formatWithCommas } from 'common/util/format'
 import { useMemo } from 'react'
 
 type UserEntry = LeaderboardEntry & {
   username: string
   profit?: number
+  numTrades: number
+  numQuestions: number
+  investedAmount: number
 }
 
 export default function UsersPage() {
@@ -38,15 +41,31 @@ export default function UsersPage() {
       username: u.username,
       score: u.balance,
       profit: profitByUserId.get(u.id),
+      numTrades: u.numTrades ?? 0,
+      numQuestions: u.numQuestions ?? 0,
+      investedAmount: u.investedAmount ?? 0,
     }))
   }, [users, profitEntries])
 
+  const loadingColumns: LeaderboardColumn[] = [
+    { header: 'Balance', renderCell: () => null },
+    { header: 'Invested', renderCell: () => null },
+    { header: 'Trades', renderCell: () => null },
+    { header: 'Questions', renderCell: () => null },
+    { header: 'Profit', renderCell: () => null },
+  ]
+
   const columns: LeaderboardColumn<UserEntry>[] = [
     { header: 'Balance', renderCell: (e) => formatMoney(e.score) },
+    { header: 'Invested', renderCell: (e) => formatMoney(e.investedAmount) },
+    { header: 'Trades', renderCell: (e) => formatWithCommas(e.numTrades) },
+    {
+      header: 'Questions',
+      renderCell: (e) => formatWithCommas(e.numQuestions),
+    },
     {
       header: 'Profit',
-      renderCell: (e) =>
-        formatMoney(e.profit ?? 0),
+      renderCell: (e) => formatMoney(e.profit ?? 0),
     },
   ]
 
@@ -64,7 +83,7 @@ export default function UsersPage() {
 
         <div className="bg-canvas-0 border-ink-200 overflow-hidden rounded-lg border">
           {loading ? (
-            <LoadingLeaderboard columns={columns} />
+            <LoadingLeaderboard columns={loadingColumns} />
           ) : (
             <Leaderboard
               entries={entries}

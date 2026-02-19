@@ -10,6 +10,7 @@ import {
   SparklesIcon,
   StarIcon,
   SunIcon,
+  UserGroupIcon,
 } from '@heroicons/react/outline'
 // import { PiTelevisionSimple } from 'react-icons/pi'
 import clsx from 'clsx'
@@ -166,6 +167,7 @@ const getDesktopNav = (
         icon: NotificationsIcon,
       },
       { name: 'Leagues', href: '/leagues', icon: TrophyIcon },
+      { name: 'Users', href: '/users', icon: UserGroupIcon },
       {
         name: 'Forum',
         href: '/posts',
@@ -209,6 +211,7 @@ const getMobileNav = (
 
   return buildArray<NavItem>(
     { name: 'Leagues', href: '/leagues', icon: TrophyIcon },
+    { name: 'Users', href: '/users', icon: UserGroupIcon },
     { name: 'Forum', href: '/posts', icon: ChatIcon },
     { name: 'Charity', href: '/charity', icon: HeartIcon },
     loggedIn && {

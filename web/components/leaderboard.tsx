@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { range } from 'lodash'
+import { useRouter } from 'next/navigation'
 import { ReactNode } from 'react'
 
 import { Table } from './widgets/table'
@@ -26,8 +27,11 @@ export function Leaderboard<T extends LeaderboardEntry>(props: {
   columns: LeaderboardColumn<T>[]
   className?: string
   highlightUserId?: string
+  getRowHref?: (entry: T) => string
 }) {
-  const { title, entries, columns, className, highlightUserId } = props
+  const { title, entries, columns, className, highlightUserId, getRowHref } =
+    props
+  const router = useRouter()
 
   return (
     <div className={clsx('w-full', className)}>
@@ -58,34 +62,41 @@ export function Leaderboard<T extends LeaderboardEntry>(props: {
               </tr>
             </thead>
             <tbody className="divide-ink-100 divide-y">
-              {entries.map((entry, index) => (
-                <tr
-                  key={index}
-                  className={clsx(
-                    entry.userId === highlightUserId && 'bg-primary-50'
-                  )}
-                >
-                  <td className="text-ink-600 py-3 text-sm font-medium tabular-nums">
-                    {entry.rank ? entry.rank : index + 1}
-                  </td>
-                  <td className="py-3">
-                    <UserAvatarAndBadge
-                      className="max-[400px]:max-w-[160px] sm:max-w-[200px] xl:max-w-none"
-                      user={{ id: entry.userId, ...entry }}
-                      short
-                      displayContext="leaderboard"
-                    />
-                  </td>
-                  {columns.map((column, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className="text-ink-700 py-3 text-right text-sm font-medium tabular-nums"
-                    >
-                      {column.renderCell(entry)}
+              {entries.map((entry, index) => {
+                const href = getRowHref?.(entry)
+                return (
+                  <tr
+                    key={index}
+                    className={clsx(
+                      entry.userId === highlightUserId && 'bg-primary-50',
+                      href && 'cursor-pointer'
+                    )}
+                    onClick={
+                      href ? () => router.push(href) : undefined
+                    }
+                  >
+                    <td className="text-ink-600 py-3 text-sm font-medium tabular-nums">
+                      {entry.rank ? entry.rank : index + 1}
                     </td>
-                  ))}
-                </tr>
-              ))}
+                    <td className="py-3">
+                      <UserAvatarAndBadge
+                        className="max-[400px]:max-w-[160px] sm:max-w-[200px] xl:max-w-none"
+                        user={{ id: entry.userId, ...entry }}
+                        short
+                        displayContext="leaderboard"
+                      />
+                    </td>
+                    {columns.map((column, colIndex) => (
+                      <td
+                        key={colIndex}
+                        className="text-ink-700 py-3 text-right text-sm font-medium tabular-nums"
+                      >
+                        {column.renderCell(entry)}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </Table>
         </div>

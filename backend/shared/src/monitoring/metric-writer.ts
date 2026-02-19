@@ -135,6 +135,7 @@ export class MetricWriter {
   }
 
   start() {
+    return
     if (!this.runInterval) {
       this.runInterval = setInterval(async () => {
         try {

@@ -55,10 +55,24 @@ export const getUsers: APIHandler<'users'> = async ({
       (r: { creator_id: string; n: number }) => r
     ),
     pg.map(
-      `select distinct on (user_id) user_id, investment_value
-       from user_portfolio_history
-       where user_id = any($1)
-       order by user_id, ts desc`,
+      `select ucm.user_id, sum(
+        case
+          when answers.prob is not null then
+            coalesce(ucm.total_shares_yes, 0) * answers.prob
+            + coalesce(ucm.total_shares_no, 0) * (1 - answers.prob)
+          else
+            coalesce(ucm.total_shares_yes, 0) * (contracts.data->>'prob')::numeric
+            + coalesce(ucm.total_shares_no, 0) * (1 - (contracts.data->>'prob')::numeric)
+        end
+      ) as investment_value
+      from user_contract_metrics ucm
+      join contracts on ucm.contract_id = contracts.id
+      left join answers on ucm.answer_id = answers.id
+      where ucm.user_id = any($1)
+        and contracts.resolution is null
+        and (contracts.mechanism = 'cpmm-multi-1' or contracts.mechanism = 'cpmm-1')
+        and ucm.has_shares = true
+      group by ucm.user_id`,
       [userIds],
       (r: { user_id: string; investment_value: number }) => r
     ),

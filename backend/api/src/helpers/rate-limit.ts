@@ -24,11 +24,15 @@ type RateLimitData = {
   timestamps: number[]
 }
 
+const DEFAULT_MAX_CALLS = process.env.RATE_LIMIT_MAX_CALLS
+  ? parseInt(process.env.RATE_LIMIT_MAX_CALLS)
+  : 100
+
 export const rateLimitByUser = <N extends APIPath>(
   f: APIHandler<N>,
   options: RateLimitOptions = {}
 ) => {
-  const { maxCalls = 25, windowMs = HOUR_MS } = options
+  const { maxCalls = DEFAULT_MAX_CALLS, windowMs = HOUR_MS } = options
 
   // Track rate limits by user ID and endpoint
   const rateLimits = new Map<string, Map<N, RateLimitData>>()

@@ -166,6 +166,7 @@ import { getTasks } from './get-tasks'
 import { updateCategory } from './update-category'
 import { updateTask } from './update-task'
 
+import { adminAddMana } from './admin-add-mana'
 import { adminCreateBotUser } from './admin-create-bot-user'
 import { adminDeleteUser } from './admin-delete-user'
 import { adminGetRelatedUsers } from './admin-get-related-users'
@@ -239,6 +240,7 @@ export const handlers: { [k in APIPath]: APIHandler<k> } = {
   'refresh-all-clients': refreshAllClients,
   'recover-user': adminRecoverUser,
   'get-user-info': adminGetUserInfo,
+  'admin-add-mana': adminAddMana,
   'admin-create-bot-user': adminCreateBotUser,
   'admin-delete-user': adminDeleteUser,
   'admin-get-related-users': adminGetRelatedUsers,

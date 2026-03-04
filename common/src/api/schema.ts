@@ -152,6 +152,19 @@ export const API = (_apiTypeCheck = {
       initialIpAddress?: string
     },
   },
+  'admin-add-mana': {
+    method: 'POST',
+    visibility: 'undocumented',
+    authed: true,
+    props: z
+      .object({
+        userId: z.string().optional(),
+        username: z.string().optional(),
+        amount: z.number().positive(),
+      })
+      .strict(),
+    returns: {} as { success: boolean },
+  },
   'admin-create-bot-user': {
     method: 'POST',
     visibility: 'undocumented',

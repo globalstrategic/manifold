@@ -238,6 +238,7 @@ jobs:
               # Run db-init if requested (first deploy or schema changes)
               if [ '${{ github.event.inputs.run_db_init }}' = 'true' ]; then
                 echo 'Running database schema initialization...'
+                set -a && source .env && set +a
                 export PSQL='sudo docker exec -i manifold-db psql -U postgres -d postgres'
                 bash scripts/db-init.sh
               fi
